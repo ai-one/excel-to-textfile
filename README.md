@@ -8,7 +8,7 @@ This MS Excel Add-In loops through an Excel spreadsheet and creates individual t
 * Excel 2010 (or higher)
 
 ##Install Steps:
-1.	Save a copy of **ExcelToFile.xlam** on your computer.
+1.	Download and a copy of **ExcelToFile.xlam** on your computer. You can find the latest version of the file in [Releases](https://github.com/KurtAiOne/excel-to-textfile/releases).
 2.	Open any MS Excel Workbook.
 3.	On the **File Menu**, click **Options**.
 4.	In the **Excel Options** window, click **Add-Ins**. Locate the **Manage** drop-down list, select **Excel Add-ins** and click **Go...**
