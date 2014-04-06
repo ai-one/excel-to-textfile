@@ -1,167 +1,208 @@
 VERSION 5.00
-Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} formStep1 
+Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} mainUserForm 
    Caption         =   "ai-one Excel-to-Textfile Utility"
    ClientHeight    =   7644
    ClientLeft      =   36
    ClientTop       =   360
    ClientWidth     =   11028
-   OleObjectBlob   =   "formStep1.frx":0000
+   OleObjectBlob   =   "mainUserForm.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
-Attribute VB_Name = "formStep1"
+Attribute VB_Name = "mainUserForm"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Declare global variables that are passed across form pages.
 
+' titleRow = Row number containing column titles
 Public titleRow As Integer
+
+' worksheetName = Name of worksheet containing data to process
 Public worksheetName As String
+
+' folderPath = Path of folder to save text files.
 Public folderPath As String
+
+' fileNameColumn = Name of column that contains the unique IDs to be used as filenames.
 Public fileNameColumn As Integer
-Public validationResult As Boolean
 
+' Page 2 Back Button
+Private Sub backButton_Page2_Click()
 
-Private Sub cancelButton_Click()
-
-Unload Me
-
-End Sub
-
-Private Sub columnsBackButton_Click()
-
-Me.MultiPage1.Pages(1).Enabled = False
-Me.MultiPage1.Pages(0).Enabled = True
-
-Me.MultiPage1.Value = 0
-
-End Sub
-
-Private Sub columnsCancelButton_Click()
-Unload Me
-End Sub
-
-Private Sub columnsNextButton_Click()
-
-fileNameColumn = Me.IDColumn.Column(1)
-
-dupesResult = validateDuplicates(titleRow + 1, fileNameColumn, worksheetName)
-
-charsResult = validateCharacters(titleRow + 1, fileNameColumn, worksheetName)
-
-If dupesResult And charsResult Then
-    Me.verifyTextBox.Value = Me.verifyTextBox.Value & Chr(13) & Chr(13) & "Press Start button to generate files."
+    Me.MultiPage1.Pages(2).Enabled = False
+    Me.MultiPage1.Pages(1).Enabled = False
+    Me.MultiPage1.Pages(0).Enabled = True
     
-    Me.startButton.Enabled = True
+    Me.MultiPage1.Value = 0
+
+End Sub
+
+' Page 3 Back Button
+Private Sub backButton_Page3_Click()
+
+    Me.MultiPage1.Pages(2).Enabled = False
+    Me.MultiPage1.Pages(1).Enabled = True
+    Me.MultiPage1.Pages(0).Enabled = False
     
-End If
+    Me.MultiPage1.Value = 1
+
+End Sub
+
+' Close the program if user selects the Cancel Button
+Private Sub cancelButton_Page1_Click()
+
+    Unload Me
+
+End Sub
+
+' Page 2 Cancel Button
+Private Sub cancelButton_Page2_Click()
+
+    Unload Me
+
+End Sub
+
+' Page 3 Cancel Button
+Private Sub cancelButton_Page3_Click()
+
+    Unload Me
+
+End Sub
+
+
+' Page 1 Next Button
+Private Sub nextButton_Page1_Click()
+
+    worksheetName = ""
+    
+    ' Verify that a folder has been selected.
+    If Me.folderTextBox = "" Then
+        MsgBox ("Please select a folder to save the text files.")
+    
+    Else
+    
+        folderPath = Me.folderTextBox.Value
+        
+        ' Verify that user has selected a row that contains column titles.
+        If firstRowOptionButton.Value = True Then
+            titleRow = 1
+        Else
+            Set RowRange = Application.InputBox(Prompt:="Select the row that contains the column titles", Type:=8)
+            titleRow = RowRange.Rows(1).Row
+        End If
+        
+        ' Get the selected Worksheet Name
+        With Me.worksheetListBox
+        
+            For i = 0 To .ListCount - 1
+                
+                If .Selected(i) = True Then
+                    worksheetName = .List(i)
+                End If
+        
+            Next i
+            
+        End With
+        
+        ' Verify that user selected a worksheet
+        If worksheets(worksheetName).UsedRange.Address = "$A$1" Then
+            
+            MsgBox ("Worksheet " & worksheetName & " is empty. Please select a different worksheet")
+            
+        ' All good, now populate the column names and continue to the next page.
+        Else
+            Call populateColumnForm(titleRow, worksheetName)
+            
+            Me.MultiPage1.Pages(2).Enabled = False
+            Me.MultiPage1.Pages(1).Enabled = True
+            Me.MultiPage1.Pages(0).Enabled = False
+            
+            Me.MultiPage1.Value = 1
+        End If
+    
+    End If
+
+End Sub
+
+' Page 2 Next Button
+Private Sub nextButton_Page2_Click()
+
+    fileNameColumn = Me.IDColumn.Column(1)
+    
+    ' Check if there are any duplicates. True = no duplicates found.
+    dupesResult = validateDuplicates(titleRow + 1, fileNameColumn, worksheetName)
+    
+    ' Check if there are any invalid characters. True = no invalid characters.
+    charsResult = validateCharacters(titleRow + 1, fileNameColumn, worksheetName)
+    
+    ' If no dupes or invalid characters, then enable the start menu
+    ' Otherwise keep the start menu disabled.
+    If dupesResult And charsResult Then
+        Me.verifyTextBox.Value = Me.verifyTextBox.Value & Chr(13) & Chr(13) & "Press Start button to generate files."
+        
+        Me.startButton_Page3.Enabled = True
+        
+    End If
+    
+    ' Send user to the next page to see validation results and to start the process
     Me.MultiPage1.Pages(2).Enabled = True
     Me.MultiPage1.Pages(1).Enabled = False
     Me.MultiPage1.Pages(0).Enabled = False
     
     Me.MultiPage1.Value = 2
-
+    
 End Sub
 
-Private Sub Label2_Click()
-
+' Show select folder dialog box.
+Private Sub selectFolderButton_Click()
+    
+    Dim newFolderPath As String
+    newFolderPath = GetFolder(Me.folderTextBox.Value)
+    
+    Me.folderTextBox.Value = newFolderPath
+    
 End Sub
 
-Private Sub nextButton_Click()
 
-worksheetName = ""
+' Page 3 Start Button
+Private Sub startButton_Page3_Click()
 
-If Me.folderTextBox = "" Then
-    MsgBox ("Please select a folder to save the text files.")
-Else
-
-    folderPath = Me.folderTextBox.Value
+    ' Create a columnArray that contains the columns selected to be part of the text file(s)
+    Dim columnString As String
     
-    If firstRowOptionButton.Value = True Then
-        titleRow = 1
-    Else
-        Set RowRange = Application.InputBox(Prompt:="Select the row that contains the column titles", Type:=8)
-        titleRow = RowRange.Rows(1).Row
-    End If
-    
-    
-    With Me.worksheetListBox
-    
+    ' Get the list of columns selected by user.
+    With Me.TextColumns
         For i = 0 To .ListCount - 1
-            
-            If .Selected(i) = True Then
-                worksheetName = .List(i)
+            If .Selected(i) Then
+                If Len(columnString) > 0 Then
+                    columnString = columnString + "," + .Column(1, i)
+                Else
+                    columnString = columnString + .Column(1, i)
+                End If
             End If
-    
         Next i
-        
     End With
     
-    If worksheets(worksheetName).UsedRange.Address = "$A$1" Then
-        
-        MsgBox ("Worksheet " & worksheetName & " is empty. Please select a different worksheet")
-        
-    Else
-        Call populateColumnForm(titleRow, worksheetName)
-        
-        Me.MultiPage1.Pages(1).Enabled = True
-        Me.MultiPage1.Pages(0).Enabled = False
-        
-        Me.MultiPage1.Value = 1
-    End If
-
-End If
-
-
-
-
-
+    ' Create an array of columns.
+    ' The Split command returns a String array, so we will need to convert to an integer array later
+    columnArrayString = Split(columnString, ",")
+    
+    columnArrayStringLength = UBound(columnArrayString)
+    
+    Dim columnArray() As Integer
+    ReDim columnArray(columnArrayStringLength)
+    
+    For c = 0 To columnArrayStringLength
+        columnArray(c) = columnArrayString(c)
+    Next
+    
+    ' Execute the write text file sub which performs the writing of files.
+    Call WriteTextFile(titleRow + 1, fileNameColumn, columnArray, folderPath)
+    
 End Sub
 
-Private Sub selectFolderButton_Click()
-Dim newFolderPath As String
-newFolderPath = GetFolder(Me.folderTextBox.Value)
-
-Me.folderTextBox.Value = newFolderPath
-End Sub
-
-Private Sub startButton_Click()
-
-' Create a columnArray that contains the columns selected to be part of the text file(s)
-Dim columnString As String
-
-With Me.TextColumns
-    For i = 0 To .ListCount - 1
-        If .Selected(i) Then
-            If Len(columnString) > 0 Then
-                columnString = columnString + "," + .Column(1, i)
-            Else
-                columnString = columnString + .Column(1, i)
-            End If
-        End If
-    Next i
-End With
-
-' Create an array of columns.
-' The Split command returns a String array, so we will need to convert to an integer array later
-columnArrayString = Split(columnString, ",")
-
-columnArrayStringLength = UBound(columnArrayString)
-
-Dim columnArray() As Integer
-ReDim columnArray(columnArrayStringLength)
-
-For c = 0 To columnArrayStringLength
-    columnArray(c) = columnArrayString(c)
-Next
-
-
-Call WriteTextFile(titleRow + 1, fileNameColumn, columnArray, folderPath)
-End Sub
-
-Private Sub UserForm_Click()
-
-End Sub
-
+' Initialization sub for the form. Called when the form is first showed.
 Private Sub UserForm_Initialize()
     
     Dim worksheetCount As Integer
@@ -194,22 +235,7 @@ Private Sub UserForm_Initialize()
     Dim folderPath As String
     folderPath = Application.ActiveWorkbook.Path
     Me.folderTextBox.Value = folderPath
-End Sub
-
-Private Sub verifyBackButton_Click()
-
-Me.MultiPage1.Pages(2).Enabled = False
-Me.MultiPage1.Pages(1).Enabled = True
-Me.MultiPage1.Pages(0).Enabled = False
-
-Me.MultiPage1.Value = 1
-
-End Sub
-
-Private Sub verifyCancelButton_Click()
-
-Unload Me
-
+    
 End Sub
 
 Private Sub populateColumnForm(titleRow As Integer, worksheetName As String)
@@ -280,8 +306,6 @@ Sub WriteTextFile(startRow As Integer, fileNameColumn As Integer, ByRef columnAr
     LastCol = ActiveSheet.UsedRange.SpecialCells(xlCellTypeLastCell).Column
     LastRow = ActiveSheet.UsedRange.SpecialCells(xlCellTypeLastCell).Row
     
-    'SelectedFolder = GetFolder(Application.ActiveWorkbook.Path)
-    
     For i = startRow To LastRow
     
         Filename = Trim(Cells(i, fileNameColumn).Value)
@@ -292,17 +316,13 @@ Sub WriteTextFile(startRow As Integer, fileNameColumn As Integer, ByRef columnAr
         CellData = ""
         
         Open filePath For Output As #2
-        
-        'For j = 2 To LastCol
+
         Dim N As Integer
         For N = LBound(columnArray) To UBound(columnArray)
         
-            'MsgBox ("i =>" & i & " N =>" & columnArray(N) & " Cell =>" & Trim(Cells(i, columnArray(N)).Value))
             CellData = CellData + Trim(Cells(i, columnArray(N)).Value) + vbCrLf + vbCrLf
             
         Next N
-        
-        'Next j
         
         Print #2, CellData
         
@@ -313,7 +333,6 @@ Sub WriteTextFile(startRow As Integer, fileNameColumn As Integer, ByRef columnAr
     MsgBox ("File generation completed.")
     
     Unload Me
-    
     
 End Sub
 
@@ -445,17 +464,19 @@ Private Function validateCharacters(startRow As Integer, columnID As Integer, wo
 End Function
 
 Function GetFolder(strPath As String) As String
-Dim fldr As FileDialog
-Dim sItem As String
-Set fldr = Application.FileDialog(msoFileDialogFolderPicker)
-With fldr
-    .Title = "Select a Folder To Save Text Files"
-    .AllowMultiSelect = False
-    .InitialFileName = strPath
-    If .Show <> -1 Then GoTo NextCode
-    sItem = .SelectedItems(1)
-End With
+
+    Dim fldr As FileDialog
+    Dim sItem As String
+    Set fldr = Application.FileDialog(msoFileDialogFolderPicker)
+    With fldr
+        .Title = "Select a Folder To Save Text Files"
+        .AllowMultiSelect = False
+        .InitialFileName = strPath
+        If .Show <> -1 Then GoTo NextCode
+        sItem = .SelectedItems(1)
+    End With
 NextCode:
-GetFolder = sItem
-Set fldr = Nothing
+    GetFolder = sItem
+    Set fldr = Nothing
+
 End Function

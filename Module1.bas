@@ -1,4 +1,5 @@
 Attribute VB_Name = "Module1"
+' Sub to launch mainUserForm when Add-In is selected.
 Sub CallUserForm()
-    formStep1.Show
+    mainUserForm.Show
 End Sub
