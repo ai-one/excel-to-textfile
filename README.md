@@ -31,7 +31,19 @@ This MS Excel Add-In loops through an Excel spreadsheet and creates individual t
 # Uninstall Instructions
 
 1.	Open any MS Excel Workbook.
-2.	On the **File Menu**, click **Options**.
+2.	On the **File** Menu, click **Options**.
 3.	In the **Excel Options** window, click **Add-Ins**. Locate the **Manage** drop-down list, select **Excel Add-ins** and click **Go...**
 4.	In the **Add-Ins** window, uncheck the checkbox next to **Excel to TextFile Add-In**.
 5.	Now click **OK** and the Add-In is uninstalled.
+
+# .XLAM Build Instructions
+
+1.  Clone this repository.
+2.	Open any MS Excel Workbook.
+3.	On the **Developer** Menu, click **Visual Basic**.
+4.  From the **Microsoft Visual Basic for Applications** window, select the **File** Menu and click **Import File**
+5.  Select each of the `.cls`, `.frm`, `.bas` files from this repository.
+6.  Close the **Microsoft Visual Basic for Applications** window and go back to the open MS Excel Workbook.
+7.  On the **File** Menu, click **Save As**.
+8.  At the **Save as type** drop-down, select **Excel Add-In (*.xlam)**, enter a **File name** and press **Save**.
+9.  An `.xlam` MS Excel Add-In file is now created.
